@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
-import Constants from "expo-constants";
+import { getBackendBaseUrl } from "../config/api";
 
 const AuthContext = createContext();
 
@@ -41,31 +40,7 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    function resolveBackendBaseUrl() {
-        let raw = process.env.EXPO_PUBLIC_RIDER_BACKEND_URL;
-        if (!raw || raw.trim() === "") {
-            try {
-                const hostUri =
-                    Constants.expoConfig?.hostUri ||
-                    Constants.manifest2?.extra?.expoClient?.hostUri ||
-                    Constants.manifest?.debuggerHost;
-                if (hostUri && hostUri.includes(":")) {
-                    const host = hostUri.split(":")[0];
-                    raw = `http://${host}:3006`;
-                }
-            } catch (_) {}
-        }
-        if (!raw) raw = "http://localhost:3006";
-        if (
-            Platform.OS === "android" &&
-            /^(http:\/\/)(localhost|127\.0\.0\.1)/.test(raw)
-        ) {
-            raw = raw.replace(/localhost|127\.0\.0\.1/, "10.0.2.2");
-        }
-        return raw.replace(/\/$/, "");
-    }
-
-    const backendBase = resolveBackendBaseUrl();
+    const backendBase = getBackendBaseUrl();
 
     const login = async (email, password) => {
         try {

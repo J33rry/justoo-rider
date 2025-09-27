@@ -1,48 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
-import Constants from "expo-constants";
+import { getBackendBaseUrl } from "../config/api";
 
-// Resolve a backend URL that works across emulator, device, and dev client.
-// Priority:
-// 1. Explicit env var EXPO_PUBLIC_RIDER_BACKEND_URL
-// 2. Derive from Expo packager host (LAN) if available
-// 3. Fallback to localhost (mapped for Android emulator)
-function resolveBackendBaseUrl() {
-    let raw = process.env.EXPO_PUBLIC_RIDER_BACKEND_URL;
-
-    if (!raw || raw.trim() === "") {
-        // Try to infer from debugger / Metro host
-        try {
-            // For Expo SDK 49+, hostUri may be under Constants.expoConfig.hostUri
-            const hostUri =
-                Constants.expoConfig?.hostUri ||
-                Constants.manifest2?.extra?.expoClient?.hostUri ||
-                Constants.manifest?.debuggerHost;
-            if (hostUri && hostUri.includes(":")) {
-                const host = hostUri.split(":")[0];
-                raw = `http://${host}:3006`;
-            }
-        } catch (e) {
-            // silent fallback
-        }
-    }
-
-    if (!raw) {
-        raw = "http://localhost:3006";
-    }
-
-    // If running on Android emulator, replace localhost with 10.0.2.2
-    if (
-        Platform.OS === "android" &&
-        /^(http:\/\/)(localhost|127\.0\.0\.1)/.test(raw)
-    ) {
-        raw = raw.replace(/localhost|127\.0\.0\.1/, "10.0.2.2");
-    }
-
-    return raw.replace(/\/$/, ""); // remove trailing slash if any
-}
-
-const BACKEND_URL = resolveBackendBaseUrl();
+const BACKEND_URL = getBackendBaseUrl();
 
 // Optional: expose for debugging
 if (__DEV__) {
@@ -117,8 +76,9 @@ class ApiService {
             if (filters.month) queryParams.append("month", filters.month);
             if (filters.year) queryParams.append("year", filters.year);
 
-            const endpoint = `/api/orders/completed${queryParams.toString() ? `?${queryParams.toString()}` : ""
-                }`;
+            const endpoint = `/api/orders/completed${
+                queryParams.toString() ? `?${queryParams.toString()}` : ""
+            }`;
             const response = await this.makeAuthenticatedRequest(endpoint);
             const data = await response.json();
 
@@ -296,7 +256,8 @@ class ApiService {
             } else {
                 return {
                     success: false,
-                    error: data.message || "Failed to mark notification as read",
+                    error:
+                        data.message || "Failed to mark notification as read",
                 };
             }
         } catch (error) {
@@ -373,12 +334,15 @@ class ApiService {
         try {
             const queryParams = new URLSearchParams();
 
-            if (filters.startDate) queryParams.append("startDate", filters.startDate);
+            if (filters.startDate)
+                queryParams.append("startDate", filters.startDate);
             if (filters.endDate) queryParams.append("endDate", filters.endDate);
             if (filters.month) queryParams.append("month", filters.month);
             if (filters.year) queryParams.append("year", filters.year);
 
-            const endpoint = `/api/rider/earnings${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+            const endpoint = `/api/rider/earnings${
+                queryParams.toString() ? `?${queryParams.toString()}` : ""
+            }`;
             const response = await this.makeAuthenticatedRequest(endpoint);
             const data = await response.json();
 
@@ -435,9 +399,12 @@ class ApiService {
     // Refresh token
     async refreshToken() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/auth/refresh", {
-                method: "POST",
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/auth/refresh",
+                {
+                    method: "POST",
+                }
+            );
 
             const data = await response.json();
 
@@ -461,10 +428,13 @@ class ApiService {
     // Update rider profile
     async updateRiderProfile(profileData) {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/auth/profile", {
-                method: "PUT",
-                body: JSON.stringify(profileData),
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/auth/profile",
+                {
+                    method: "PUT",
+                    body: JSON.stringify(profileData),
+                }
+            );
 
             const data = await response.json();
 
@@ -488,13 +458,16 @@ class ApiService {
     // Change password
     async changePassword(currentPassword, newPassword) {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/auth/change-password", {
-                method: "PUT",
-                body: JSON.stringify({
-                    currentPassword,
-                    newPassword,
-                }),
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/auth/change-password",
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        currentPassword,
+                        newPassword,
+                    }),
+                }
+            );
 
             const data = await response.json();
 
@@ -521,7 +494,9 @@ class ApiService {
     // Get order details by ID
     async getOrderDetails(orderId) {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/orders/${orderId}`);
+            const response = await this.makeAuthenticatedRequest(
+                `/api/orders/${orderId}`
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -544,9 +519,12 @@ class ApiService {
     // Accept an order
     async acceptOrder(orderId) {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/orders/${orderId}/accept`, {
-                method: "POST",
-            });
+            const response = await this.makeAuthenticatedRequest(
+                `/api/orders/${orderId}/accept`,
+                {
+                    method: "POST",
+                }
+            );
 
             const data = await response.json();
 
@@ -570,10 +548,13 @@ class ApiService {
     // Reject an order
     async rejectOrder(orderId, reason = "") {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/orders/${orderId}/reject`, {
-                method: "POST",
-                body: JSON.stringify({ reason }),
-            });
+            const response = await this.makeAuthenticatedRequest(
+                `/api/orders/${orderId}/reject`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({ reason }),
+                }
+            );
 
             const data = await response.json();
 
@@ -597,7 +578,9 @@ class ApiService {
     // Get assigned orders
     async getAssignedOrders() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/orders/assigned");
+            const response = await this.makeAuthenticatedRequest(
+                "/api/orders/assigned"
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -623,7 +606,9 @@ class ApiService {
     // Get rider statistics
     async getRiderStats(period = "month") {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/rider/stats?period=${period}`);
+            const response = await this.makeAuthenticatedRequest(
+                `/api/rider/stats?period=${period}`
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -646,10 +631,13 @@ class ApiService {
     // Update rider status
     async updateRiderStatus(status) {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/rider/status", {
-                method: "PUT",
-                body: JSON.stringify({ status }),
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/rider/status",
+                {
+                    method: "PUT",
+                    body: JSON.stringify({ status }),
+                }
+            );
 
             const data = await response.json();
 
@@ -674,11 +662,14 @@ class ApiService {
     async getRiderShifts(filters = {}) {
         try {
             const queryParams = new URLSearchParams();
-            if (filters.startDate) queryParams.append("startDate", filters.startDate);
+            if (filters.startDate)
+                queryParams.append("startDate", filters.startDate);
             if (filters.endDate) queryParams.append("endDate", filters.endDate);
             if (filters.status) queryParams.append("status", filters.status);
 
-            const endpoint = `/api/rider/shifts${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+            const endpoint = `/api/rider/shifts${
+                queryParams.toString() ? `?${queryParams.toString()}` : ""
+            }`;
             const response = await this.makeAuthenticatedRequest(endpoint);
             const data = await response.json();
 
@@ -702,9 +693,12 @@ class ApiService {
     // Start shift
     async startShift() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/rider/shift/start", {
-                method: "POST",
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/rider/shift/start",
+                {
+                    method: "POST",
+                }
+            );
 
             const data = await response.json();
 
@@ -728,9 +722,12 @@ class ApiService {
     // End shift
     async endShift() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/rider/shift/end", {
-                method: "POST",
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/rider/shift/end",
+                {
+                    method: "POST",
+                }
+            );
 
             const data = await response.json();
 
@@ -757,7 +754,9 @@ class ApiService {
     // Get delivery by ID
     async getDeliveryDetails(deliveryId) {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/deliveries/${deliveryId}`);
+            const response = await this.makeAuthenticatedRequest(
+                `/api/deliveries/${deliveryId}`
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -829,7 +828,9 @@ class ApiService {
     // Get delivery route/navigation
     async getDeliveryRoute(deliveryId) {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/deliveries/${deliveryId}/route`);
+            const response = await this.makeAuthenticatedRequest(
+                `/api/deliveries/${deliveryId}/route`
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -855,7 +856,9 @@ class ApiService {
     // Get unread notifications count
     async getUnreadNotificationsCount() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/notifications/unread/count");
+            const response = await this.makeAuthenticatedRequest(
+                "/api/notifications/unread/count"
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -878,9 +881,12 @@ class ApiService {
     // Mark all notifications as read
     async markAllNotificationsAsRead() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/notifications/mark-all-read", {
-                method: "PUT",
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/notifications/mark-all-read",
+                {
+                    method: "PUT",
+                }
+            );
 
             const data = await response.json();
 
@@ -889,7 +895,9 @@ class ApiService {
             } else {
                 return {
                     success: false,
-                    error: data.message || "Failed to mark all notifications as read",
+                    error:
+                        data.message ||
+                        "Failed to mark all notifications as read",
                 };
             }
         } catch (error) {
@@ -904,9 +912,12 @@ class ApiService {
     // Delete notification
     async deleteNotification(notificationId) {
         try {
-            const response = await this.makeAuthenticatedRequest(`/api/notifications/${notificationId}`, {
-                method: "DELETE",
-            });
+            const response = await this.makeAuthenticatedRequest(
+                `/api/notifications/${notificationId}`,
+                {
+                    method: "DELETE",
+                }
+            );
 
             const data = await response.json();
 
@@ -930,7 +941,9 @@ class ApiService {
     // Get notification preferences
     async getNotificationPreferences() {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/notifications/preferences");
+            const response = await this.makeAuthenticatedRequest(
+                "/api/notifications/preferences"
+            );
             const data = await response.json();
 
             if (response.ok) {
@@ -938,7 +951,9 @@ class ApiService {
             } else {
                 return {
                     success: false,
-                    error: data.message || "Failed to fetch notification preferences",
+                    error:
+                        data.message ||
+                        "Failed to fetch notification preferences",
                 };
             }
         } catch (error) {
@@ -953,10 +968,13 @@ class ApiService {
     // Update notification preferences
     async updateNotificationPreferences(preferences) {
         try {
-            const response = await this.makeAuthenticatedRequest("/api/notifications/preferences", {
-                method: "PUT",
-                body: JSON.stringify(preferences),
-            });
+            const response = await this.makeAuthenticatedRequest(
+                "/api/notifications/preferences",
+                {
+                    method: "PUT",
+                    body: JSON.stringify(preferences),
+                }
+            );
 
             const data = await response.json();
 
@@ -965,7 +983,9 @@ class ApiService {
             } else {
                 return {
                     success: false,
-                    error: data.message || "Failed to update notification preferences",
+                    error:
+                        data.message ||
+                        "Failed to update notification preferences",
                 };
             }
         } catch (error) {
